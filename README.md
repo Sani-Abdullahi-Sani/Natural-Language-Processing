@@ -19,7 +19,7 @@ cd Natural-Language-Processing
 ### 2. Install Dependencies
 Ensure you have Python 3.x installed. Then install the required dependencies via `pip`:
 
-- All the required dependencies are in the Notebooks.
+`pip install -r requirements.txt`
 
 
 ### 3. Download Pre-trained Models
