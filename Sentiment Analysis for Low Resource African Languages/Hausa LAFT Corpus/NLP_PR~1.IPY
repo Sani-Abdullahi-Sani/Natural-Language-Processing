@@ -1,0 +1,162 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": []
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "code",
+      "source": [
+        "!pip install transformers datasets torch nltk\n",
+        "!pip install pdfminer.six\n",
+        "!pip install python-docx"
+      ],
+      "metadata": {
+        "id": "ODvEvvAAkU1N"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from google.colab import drive\n",
+        "drive.mount('/content/drive')"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "3tFdHn_2nWPd",
+        "outputId": "c5081c03-9562-4c8d-cf7b-3154b45e68b2"
+      },
+      "execution_count": 2,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Mounted at /content/drive\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Import necessary libraries\n",
+        "import os\n",
+        "import pandas as pd\n",
+        "import numpy as np\n",
+        "import re\n",
+        "import glob\n",
+        "import random\n",
+        "from sklearn.model_selection import train_test_split\n",
+        "from sklearn.metrics import accuracy_score, precision_recall_fscore_support\n",
+        "from transformers import AutoTokenizer, AutoModelForMaskedLM, Trainer, TrainingArguments, DataCollatorForLanguageModeling\n",
+        "from datasets import load_dataset, Dataset\n",
+        "from pdfminer.high_level import extract_text as pdf_extract_text\n",
+        "from docx import Document"
+      ],
+      "metadata": {
+        "id": "pi4Xkec6kZPU"
+      },
+      "execution_count": 3,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Function to extract text from files\n",
+        "def extract_text_from_file(file_path):\n",
+        "    if file_path.endswith('.pdf'):\n",
+        "        return pdf_extract_text(file_path)\n",
+        "    elif file_path.endswith('.docx'):\n",
+        "        doc = Document(file_path)\n",
+        "        return '\\n'.join([para.text for para in doc.paragraphs])\n",
+        "    elif file_path.endswith('.txt'):\n",
+        "        with open(file_path, 'r', encoding='utf-8') as file:\n",
+        "            return file.read()\n",
+        "    return \"\"\n",
+        "\n",
+        "# Load all text files from specified directory\n",
+        "def load_data_from_directory(directory):\n",
+        "    all_texts = []\n",
+        "    for file_path in glob.glob(os.path.join(directory, '*')):\n",
+        "        text = extract_text_from_file(file_path)\n",
+        "        all_texts.append(text)\n",
+        "    return all_texts"
+      ],
+      "metadata": {
+        "id": "Uvt-7nVkl2hQ"
+      },
+      "execution_count": 4,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import re\n",
+        "\n",
+        "# Function to clean and preprocess text\n",
+        "def clean_text(text):\n",
+        "\n",
+        "    # Remove timestamps in the format (7:41PM, 7/17/2016)\n",
+        "    text = re.sub(r'\\(\\d{1,2}:\\d{2}(?:AM|PM), \\d{1,2}/\\d{1,2}/\\d{4}\\)', '', text)\n",
+        "\n",
+        "    # Remove extra whitespace\n",
+        "    text = re.sub(r'\\s+', ' ', text)\n",
+        "\n",
+        "    # Trim leading/trailing whitespace\n",
+        "    text = text.strip()\n",
+        "    return text"
+      ],
+      "metadata": {
+        "id": "4g9g6oxEhb4n"
+      },
+      "execution_count": 5,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Load and clean data\n",
+        "data_directory = '/content/drive/MyDrive/finetuning data/'\n",
+        "texts = load_data_from_directory(data_directory)\n",
+        "cleaned_texts = [clean_text(text) for text in texts if text]"
+      ],
+      "metadata": {
+        "id": "cnZdUeBLmHkz"
+      },
+      "execution_count": 6,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# download cleaned text in .txt file\n",
+        "with open('/content/cleaned_texts.txt', 'w') as f:\n",
+        "  for text in cleaned_texts:\n",
+        "    f.write(text + '\\n')\n",
+        "\n",
+        "from google.colab import files\n",
+        "files.download('cleaned_texts.txt')"
+      ],
+      "metadata": {
+        "id": "j4j5v6mjuvx4"
+      },
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
